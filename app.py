@@ -1,7 +1,18 @@
 from flask import Flask, render_template, request, redirect, url_for, session
+from database import db
+from model import Question
 
 app = Flask(__name__)
 app.secret_key = "test123"  # 簡易セッション用（学習用）
+
+# --- DB 設定を追加 ---
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///quiz.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db.init_app(app)
+
+# --- 起動時にテーブルだけ作成 ---
+with app.app_context():
+    db.create_all()
 
 # 簡易ユーザー
 USERS = {
