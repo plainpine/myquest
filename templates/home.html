@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>ホーム</title></head>
+<body>
+<h2>ホーム</h2>
+<p>{{ user }} さん、ようこそ。</p>
+
+<p><a href="/material">教材を見る</a></p>
+<p><a href="/section_test">章末テスト</a></p>
+<p><a href="/practice">過去問演習</a></p>
+
+{% if user == "admin@example.com" %}
+<p><a href="/admin">管理者画面</a></p>
+{% endif %}
+
+<p><a href="/logout">ログアウト</a></p>
+</body>
+</html>

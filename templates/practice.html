@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>過去問演習</title></head>
+<body>
+<h2>過去問演習</h2>
+
+<p>{{ question }}</p>
+
+<form method="post">
+    {% for c in choices %}
+        <label><input type="radio" name="choice" value="{{ loop.index }}">{{ c }}</label><br>
+    {% endfor %}
+    <button type="submit">回答</button>
+</form>
+
+<p><a href="/home">戻る</a></p>
+</body>
+</html>
