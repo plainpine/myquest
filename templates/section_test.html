@@ -10,6 +10,7 @@
     {% for c in choices %}
         <label><input type="radio" name="choice" value="{{ loop.index }}">{{ c }}</label><br>
     {% endfor %}
+    <input type="hidden" name="correct" value="{{ correct }}">
     <button type="submit">回答する</button>
 </form>
 

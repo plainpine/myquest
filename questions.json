@@ -1,0 +1,14 @@
+[
+  {
+    "question": "Pythonでリストを作る構文は？",
+    "choices": ["{1,2,3}", "[1,2,3]", "<1,2,3>", "(1,2,3)"],
+    "correct": 2,
+    "category": "section"
+  },
+  {
+    "question": "PEP8 が定めているのは何？",
+    "choices": ["標準入力方法", "コーディング規約", "実行速度規約", "セキュリティ規約"],
+    "correct": 2,
+    "category": "practice"
+  }
+]

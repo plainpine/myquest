@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from database import db
 from model import Question
+import random   # ランダム出題用
 
 app = Flask(__name__)
 app.secret_key = "test123"  # 簡易セッション用（学習用）
@@ -55,42 +56,56 @@ def material():
         return redirect("/")
     return render_template("material.html")
 
-# --- 章末テスト（固定問題1問） ---
+# --- 章末テスト ---
 @app.route("/section_test", methods=["GET", "POST"])
 def section_test():
     if "user" not in session:
         return redirect("/")
 
-    question = "Python でリストを作る構文として正しいものはどれ？"
-    choices = ["(1) {1,2,3}", "(2) [1,2,3]", "(3) <1,2,3>", "(4) (1,2,3)"]
-    correct = 2  # [1,2,3]
-
     if request.method == "POST":
         answer = int(request.form.get("choice"))
+        correct = int(request.form.get("correct"))
         result = (answer == correct)
         return redirect(url_for("result", ok=result))
 
-    return render_template("section_test.html", question=question, choices=choices)
+    # --- DBからランダムに1問取得 ---
+    q_list = Question.query.filter_by(category="section").all()
+    if not q_list:
+        return "章末テスト用の問題がDBにありません"
 
-# --- 過去問演習（固定1問） ---
+    q = random.choice(q_list)
+
+    return render_template(
+        "section_test.html",
+        question=q.question,
+        choices=[q.choice1, q.choice2, q.choice3, q.choice4],
+        correct=q.correct,   # hidden で送る
+    )
+
+# --- 過去問演習 ---
 @app.route("/practice", methods=["GET", "POST"])
 def practice():
     if "user" not in session:
         return redirect("/")
 
-    question = "PEP8 が定めているのは何？"
-    choices = ["(1) Python の標準入力方法",
-               "(2) Python のコーディング規約",
-               "(3) Python の実行速度規約",
-               "(4) Python のセキュリティ規約"]
-    correct = 2
-
     if request.method == "POST":
         answer = int(request.form.get("choice"))
+        correct = int(request.form.get("correct"))
         result = (answer == correct)
         return redirect(url_for("result", ok=result))
 
-    return render_template("practice.html", question=question, choices=choices)
+    q_list = Question.query.filter_by(category="practice").all()
+    if not q_list:
+        return "過去問の問題がDBにありません"
+
+    q = random.choice(q_list)
+
+    return render_template(
+        "practice.html",
+        question=q.question,
+        choices=[q.choice1, q.choice2, q.choice3, q.choice4],
+        correct=q.correct,
+    )
 
 # --- 結果画面 ---
 @app.route("/result")
