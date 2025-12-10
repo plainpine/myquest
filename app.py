@@ -93,32 +93,57 @@ def section_test(section_category):
         "4": "第4章",
         "5": "第5章",
         "6": "第6章",
-        # 必要に応じて章と表示名をここに追加
     }
     display_name = section_display_names.get(section_category, f"章 {section_category}")
 
     if request.method == "POST":
-        choice = request.form.get("choice")
-        if choice is None:
-            return redirect(url_for("result", ok=False))
-        answer = int(choice)
-        correct = int(request.form.get("correct"))
-        result = (answer == correct)
-        return redirect(url_for("result", ok=result))
+        questions = Question.query.filter_by(category=section_category).all()
+        results = []
+        correct_count = 0
+        for q in questions:
+            choice_id = f"choice_{q.id}"
+            user_answer = request.form.get(choice_id)
+            
+            # ユーザーが回答しなかった場合
+            if user_answer is None:
+                is_correct = False
+                user_answer_text = "未回答"
+            else:
+                user_answer = int(user_answer)
+                is_correct = (user_answer == q.correct)
+                if is_correct:
+                    correct_count += 1
+                # ユーザーの回答番号に対応するテキストを取得
+                user_answer_text = getattr(q, f"choice{user_answer}", "無効な選択")
 
-    # --- DBから指定カテゴリのランダムに1問取得 ---
-    q_list = Question.query.filter_by(category=section_category).all()
-    if not q_list:
+            # 正解の選択肢テキストを取得
+            correct_answer_text = getattr(q, f"choice{q.correct}", "正解不明")
+
+            results.append({
+                "question": q.question,
+                "user_answer": user_answer_text,
+                "correct_answer": correct_answer_text,
+                "is_correct": is_correct
+            })
+        
+        total_questions = len(questions)
+
+        return render_template(
+            "result.html",
+            results=results,
+            correct_count=correct_count,
+            total_questions=total_questions,
+            display_name=display_name
+        )
+
+    questions = Question.query.filter_by(category=section_category).all()
+    if not questions:
         return f"{display_name}用の問題がDBにありません"
-
-    q = random.choice(q_list)
 
     return render_template(
         "section_test.html",
-        question=q.question,
-        choices=[q.choice1, q.choice2, q.choice3, q.choice4],
-        correct=q.correct,   # hidden で送る
-        display_name=display_name # テンプレートに表示名を渡す
+        questions=questions,
+        display_name=display_name
     )
 
 # --- 過去問演習 ---

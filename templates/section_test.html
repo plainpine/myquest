@@ -6,18 +6,30 @@
         <h2>{{ display_name }} 章末テスト</h2>
     </div>
     <div class="card-body">
-        <p class="card-text">{{ question }}</p>
-
         <form method="post">
-            <input type="hidden" name="correct" value="{{ correct }}">
-            <div class="list-group">
-                {% for c in choices %}
+            {% for q in questions %}
+            <div class="mb-4">
+                <p class="card-text fw-bold">問題 {{ loop.index }}: {{ q.question }}</p>
+                <div class="list-group">
                     <label class="list-group-item list-group-item-action">
-                        <input class="form-check-input me-1" type="radio" name="choice" value="{{ loop.index }}">
-                        {{ c }}
+                        <input class="form-check-input me-1" type="radio" name="choice_{{ q.id }}" value="1">
+                        {{ q.choice1 }}
                     </label>
-                {% endfor %}
+                    <label class="list-group-item list-group-item-action">
+                        <input class="form-check-input me-1" type="radio" name="choice_{{ q.id }}" value="2">
+                        {{ q.choice2 }}
+                    </label>
+                    <label class="list-group-item list-group-item-action">
+                        <input class="form-check-input me-1" type="radio" name="choice_{{ q.id }}" value="3">
+                        {{ q.choice3 }}
+                    </label>
+                    <label class="list-group-item list-group-item-action">
+                        <input class="form-check-input me-1" type="radio" name="choice_{{ q.id }}" value="4">
+                        {{ q.choice4 }}
+                    </label>
+                </div>
             </div>
+            {% endfor %}
             <button type="submit" class="btn btn-primary mt-3">回答する</button>
         </form>
     </div>
