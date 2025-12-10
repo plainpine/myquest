@@ -47,7 +47,31 @@ def logout():
 def home():
     if "user" not in session:
         return redirect("/")
-    return render_template("home.html", user=session["user"])
+
+    # "category"が数字であるものを章カテゴリとして取得
+    all_categories_tuples = db.session.query(Question.category).distinct().all()
+    all_categories = [c[0] for c in all_categories_tuples if c[0] is not None]
+    
+    # isdigit()で数字のみを抽出し、数値としてソート
+    section_categories = sorted([c for c in all_categories if c.isdigit()], key=int)
+
+    # 表示用の章名をマッピングする辞書 (キーは文字列の数字)
+    section_display_names = {
+        "1": "第1章",
+        "2": "第2章",
+        "3": "第3章",
+        "4": "第4章",
+        "5": "第5章",
+        "6": "第6章",
+        # 必要に応じて章と表示名をここに追加
+    }
+
+    return render_template(
+        "home.html",
+        user=session["user"],
+        section_categories=section_categories,
+        section_display_names=section_display_names
+    )
 
 # --- 教材 ---
 @app.route("/material")
@@ -57,21 +81,35 @@ def material():
     return render_template("material.html")
 
 # --- 章末テスト ---
-@app.route("/section_test", methods=["GET", "POST"])
-def section_test():
+@app.route("/section_test/<string:section_category>", methods=["GET", "POST"])
+def section_test(section_category):
     if "user" not in session:
         return redirect("/")
 
+    section_display_names = {
+        "1": "第1章",
+        "2": "第2章",
+        "3": "第3章",
+        "4": "第4章",
+        "5": "第5章",
+        "6": "第6章",
+        # 必要に応じて章と表示名をここに追加
+    }
+    display_name = section_display_names.get(section_category, f"章 {section_category}")
+
     if request.method == "POST":
-        answer = int(request.form.get("choice"))
+        choice = request.form.get("choice")
+        if choice is None:
+            return redirect(url_for("result", ok=False))
+        answer = int(choice)
         correct = int(request.form.get("correct"))
         result = (answer == correct)
         return redirect(url_for("result", ok=result))
 
-    # --- DBからランダムに1問取得 ---
-    q_list = Question.query.filter_by(category="section").all()
+    # --- DBから指定カテゴリのランダムに1問取得 ---
+    q_list = Question.query.filter_by(category=section_category).all()
     if not q_list:
-        return "章末テスト用の問題がDBにありません"
+        return f"{display_name}用の問題がDBにありません"
 
     q = random.choice(q_list)
 
@@ -80,6 +118,7 @@ def section_test():
         question=q.question,
         choices=[q.choice1, q.choice2, q.choice3, q.choice4],
         correct=q.correct,   # hidden で送る
+        display_name=display_name # テンプレートに表示名を渡す
     )
 
 # --- 過去問演習 ---
@@ -89,7 +128,10 @@ def practice():
         return redirect("/")
 
     if request.method == "POST":
-        answer = int(request.form.get("choice"))
+        choice = request.form.get("choice")
+        if choice is None:
+            return redirect(url_for("result", ok=False))
+        answer = int(choice)
         correct = int(request.form.get("correct"))
         result = (answer == correct)
         return redirect(url_for("result", ok=result))
