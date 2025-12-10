@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from database import db
-from model import Question
+from model import Question, User
 import random   # ランダム出題用
 
 app = Flask(__name__)
@@ -15,12 +15,6 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-# 簡易ユーザー
-USERS = {
-    "student@example.com": "pass123",
-    "admin@example.com": "admin123"
-}
-
 # --- ログイン関連 ---
 @app.route("/")
 def login():
@@ -31,8 +25,12 @@ def try_login():
     email = request.form.get("email")
     pw = request.form.get("password")
 
-    if email in USERS and USERS[email] == pw:
-        session["user"] = email
+    user = User.query.filter_by(email=email).first()
+
+    if user and user.check_password(pw):
+        session["user"] = user.email
+        if not user.password_changed:
+            return redirect(url_for("change_password"))
         return redirect(url_for("home"))
     else:
         return render_template("login.html", error="ログインに失敗しました")
@@ -41,6 +39,29 @@ def try_login():
 def logout():
     session.clear()
     return redirect("/")
+
+@app.route("/change_password", methods=["GET", "POST"])
+def change_password():
+    if "user" not in session:
+        return redirect("/")
+
+    if request.method == "POST":
+        new_password = request.form.get("new_password")
+        confirm_password = request.form.get("confirm_password")
+
+        if new_password != confirm_password:
+            return render_template("change_password.html", error="パスワードが一致しません")
+
+        user = User.query.filter_by(email=session["user"]).first()
+        if user:
+            user.set_password(new_password)
+            user.password_changed = True
+            db.session.commit()
+            return redirect(url_for("home"))
+        else:
+            return redirect(url_for("login", error="ユーザーが見つかりません"))
+
+    return render_template("change_password.html")
 
 # --- ホーム ---
 @app.route("/home")
@@ -72,6 +93,7 @@ def home():
         section_categories=section_categories,
         section_display_names=section_display_names
     )
+
 
 # --- 教材 ---
 @app.route("/material")
