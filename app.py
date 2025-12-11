@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from database import db
-from model import Question, User
+from model import Question, User, TestResult
 import random   # ランダム出題用
 
 app = Flask(__name__)
@@ -168,32 +168,79 @@ def section_test(section_category):
         display_name=display_name
     )
 
-# --- 過去問演習 ---
+# --- 模擬試験 ---
 @app.route("/practice", methods=["GET", "POST"])
 def practice():
     if "user" not in session:
         return redirect("/")
 
+    display_name = "模擬試験"
+
     if request.method == "POST":
-        choice = request.form.get("choice")
-        if choice is None:
-            return redirect(url_for("result", ok=False))
-        answer = int(choice)
-        correct = int(request.form.get("correct"))
-        result = (answer == correct)
-        return redirect(url_for("result", ok=result))
+        # セッションから問題IDリストを取得
+        question_ids = session.get("practice_questions", [])
+        if not question_ids:
+            return redirect(url_for("home")) #セッションが切れた場合
 
-    q_list = Question.query.filter_by(category="practice").all()
-    if not q_list:
-        return "過去問の問題がDBにありません"
+        questions = Question.query.filter(Question.id.in_(question_ids)).all()
+        
+        # 画面表示の順序を保つためにIDをキーにした辞書を作成
+        questions_dict = {q.id: q for q in questions}
+        # セッションに保存されたIDの順序で問題リストを再構築
+        ordered_questions = [questions_dict[id] for id in question_ids if id in questions_dict]
 
-    q = random.choice(q_list)
+        results = []
+        correct_count = 0
+        for q in ordered_questions:
+            choice_id = f"choice_{q.id}"
+            user_answer = request.form.get(choice_id)
+            
+            if user_answer is None:
+                is_correct = False
+                user_answer_text = "未回答"
+            else:
+                user_answer = int(user_answer)
+                is_correct = (user_answer == q.correct)
+                if is_correct:
+                    correct_count += 1
+                user_answer_text = getattr(q, f"choice{user_answer}", "無効な選択")
+
+            correct_answer_text = getattr(q, f"choice{q.correct}", "正解不明")
+
+            results.append({
+                "question": q.question,
+                "user_answer": user_answer_text,
+                "correct_answer": correct_answer_text,
+                "is_correct": is_correct
+            })
+        
+        total_questions = len(ordered_questions)
+
+        # 結果をresult.htmlに渡す
+        return render_template(
+            "result.html",
+            results=results,
+            correct_count=correct_count,
+            total_questions=total_questions,
+            display_name=display_name
+        )
+
+    # GET request
+    all_questions = Question.query.all()
+    if not all_questions:
+        return "問題がDBにありません"
+
+    # 10問をランダムに選ぶ（10問未満なら全て選ぶ）
+    num_questions = min(len(all_questions), 10)
+    selected_questions = random.sample(all_questions, num_questions)
+    
+    # 選んだ問題のIDをセッションに保存
+    session["practice_questions"] = [q.id for q in selected_questions]
 
     return render_template(
         "practice.html",
-        question=q.question,
-        choices=[q.choice1, q.choice2, q.choice3, q.choice4],
-        correct=q.correct,
+        questions=selected_questions,
+        display_name=display_name
     )
 
 # --- 結果画面 ---
