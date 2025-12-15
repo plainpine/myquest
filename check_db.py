@@ -26,6 +26,8 @@ def read_all_questions():
             print(f"  選択肢4: {q.choice4}")
             print(f"  正解   : {q.correct}")
             print(f"  区分   : {q.category}")
+            print(f"  解説   : {q.explanation}")
+            print(f"  URL    : {q.document_url}")
             print("-" * 40)
 
 def create_initial_user():

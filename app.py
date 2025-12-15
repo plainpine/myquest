@@ -145,7 +145,9 @@ def section_test(section_category):
                 "question": q.question,
                 "user_answer": user_answer_text,
                 "correct_answer": correct_answer_text,
-                "is_correct": is_correct
+                "is_correct": is_correct,
+                "explanation": q.explanation,
+                "document_url": q.document_url
             })
         
         db.session.commit()
@@ -238,7 +240,9 @@ def practice():
                 "question": q.question,
                 "user_answer": user_answer_text,
                 "correct_answer": correct_answer_text,
-                "is_correct": is_correct
+                "is_correct": is_correct,
+                "explanation": q.explanation,
+                "document_url": q.document_url
             })
         
         db.session.commit()
@@ -329,7 +333,9 @@ def retest():
                 "question": q.question,
                 "user_answer": user_answer_text,
                 "correct_answer": correct_answer_text,
-                "is_correct": is_correct
+                "is_correct": is_correct,
+                "explanation": q.explanation,
+                "document_url": q.document_url
             })
         
         db.session.commit()

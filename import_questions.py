@@ -21,7 +21,9 @@ def import_json(json_file):
                 choice3=item["choices"][2],
                 choice4=item["choices"][3],
                 correct=item["correct"],
-                category=item.get("category", "none")
+                category=item.get("category", "none"),
+                explanation=item.get("explanation"),
+                document_url=item.get("document_url")
             )
             db.session.add(q)
 

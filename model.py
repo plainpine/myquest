@@ -14,6 +14,8 @@ class Question(db.Model):
     choice4 = db.Column(db.String(200))
     correct = db.Column(db.Integer)  # 正解番号（1〜4）
     category = db.Column(db.String(50))  # section / practice など
+    explanation = db.Column(db.Text, nullable=True) # New field for explanation
+    document_url = db.Column(db.String(500), nullable=True) # New field for document URL
 
     # TestResult との関連付け
     results = db.relationship("TestResult", back_populates="question")
