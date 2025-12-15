@@ -23,6 +23,15 @@
                 </p>
                 <p>あなたの回答: {{ r.user_answer }}</p>
                 <p>正解: {{ r.correct_answer }}</p>
+                {% if r.explanation %}
+                <div class="mt-2 p-2 bg-light border rounded">
+                    <p class="fw-bold mb-1">解説:</p>
+                    <p>{{ r.explanation }}</p>
+                </div>
+                {% endif %}
+                {% if r.document_url %}
+                <p class="mt-2">参照: <a href="{{ r.document_url }}" target="_blank">{{ r.document_url }}</a></p>
+                {% endif %}
             </li>
             {% endfor %}
         </ul>
