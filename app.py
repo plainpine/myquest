@@ -77,22 +77,10 @@ def home():
     # isdigit()で数字のみを抽出し、数値としてソート
     section_categories = sorted([c for c in all_categories if c.isdigit()], key=int)
 
-    # 表示用の章名をマッピングする辞書 (キーは文字列の数字)
-    section_display_names = {
-        "1": "第1章",
-        "2": "第2章",
-        "3": "第3章",
-        "4": "第4章",
-        "5": "第5章",
-        "6": "第6章",
-        # 必要に応じて章と表示名をここに追加
-    }
-
     return render_template(
         "home.html",
         user=session["user"],
-        section_categories=section_categories,
-        section_display_names=section_display_names
+        section_categories=section_categories
     )
 
 
@@ -109,25 +97,27 @@ def section_test(section_category):
     if "user" not in session:
         return redirect("/")
 
-    section_display_names = {
-        "1": "第1章",
-        "2": "第2章",
-        "3": "第3章",
-        "4": "第4章",
-        "5": "第5章",
-        "6": "第6章",
-    }
-    display_name = section_display_names.get(section_category, f"章 {section_category}")
+    display_name = f"第{section_category}章"
 
     if request.method == "POST":
         user = User.query.filter_by(email=session["user"]).first()
         if not user:
             return redirect(url_for("login", error="ユーザーが見つかりません"))
 
-        questions = Question.query.filter_by(category=section_category).all()
+        # セッションから問題IDリストを取得
+        question_ids = session.get(f"section_test_{section_category}_questions", [])
+        if not question_ids:
+            return redirect(url_for("home")) # セッションが切れた場合
+
+        questions = Question.query.filter(Question.id.in_(question_ids)).all()
+        # 画面表示の順序を保つためにIDをキーにした辞書を作成
+        questions_dict = {q.id: q for q in questions}
+        # セッションに保存されたIDの順序で問題リストを再構築
+        ordered_questions = [questions_dict[id] for id in question_ids if id in questions_dict]
+
         results = []
         correct_count = 0
-        for q in questions:
+        for q in ordered_questions:
             choice_id = f"choice_{q.id}"
             user_answer = request.form.get(choice_id)
             
@@ -159,7 +149,7 @@ def section_test(section_category):
             })
         
         db.session.commit()
-        total_questions = len(questions)
+        total_questions = len(ordered_questions)
 
         return render_template(
             "result.html",
@@ -169,14 +159,28 @@ def section_test(section_category):
             display_name=display_name
         )
 
-    questions = Question.query.filter_by(category=section_category).all()
-    if not questions:
+    # GET request
+    num_questions_str = request.args.get("num_questions", "10")
+    try:
+        num_questions = int(num_questions_str)
+    except ValueError:
+        num_questions = 10
+
+    all_section_questions = Question.query.filter_by(category=section_category).all()
+    if not all_section_questions:
         return f"{display_name}用の問題がDBにありません"
+
+    num_to_select = min(len(all_section_questions), num_questions)
+    selected_questions = random.sample(all_section_questions, num_to_select)
+
+    # 選んだ問題のIDをセッションに保存
+    session[f"section_test_{section_category}_questions"] = [q.id for q in selected_questions]
 
     return render_template(
         "section_test.html",
-        questions=questions,
-        display_name=display_name
+        questions=selected_questions,
+        display_name=display_name,
+        section_category=section_category
     )
 
 # --- 模擬試験 ---
@@ -250,13 +254,18 @@ def practice():
         )
 
     # GET request
+    num_questions_str = request.args.get("num_questions", "10")
+    try:
+        num_questions = int(num_questions_str)
+    except ValueError:
+        num_questions = 10
+
     all_questions = Question.query.all()
     if not all_questions:
         return "問題がDBにありません"
 
-    # 10問をランダムに選ぶ（10問未満なら全て選ぶ）
-    num_questions = min(len(all_questions), 10)
-    selected_questions = random.sample(all_questions, num_questions)
+    num_to_select = min(len(all_questions), num_questions)
+    selected_questions = random.sample(all_questions, num_to_select)
     
     # 選んだ問題のIDをセッションに保存
     session["practice_questions"] = [q.id for q in selected_questions]
@@ -365,8 +374,14 @@ def retest():
     # 苦手問題から出題
     retest_questions = Question.query.filter(Question.id.in_(eligible_question_ids)).all()
     
-    num_questions = min(len(retest_questions), 10)
-    selected_questions = random.sample(retest_questions, num_questions)
+    num_questions_str = request.args.get("num_questions", "10")
+    try:
+        num_questions = int(num_questions_str)
+    except ValueError:
+        num_questions = 10
+
+    num_to_select = min(len(retest_questions), num_questions)
+    selected_questions = random.sample(retest_questions, num_to_select)
     
     session["retest_questions"] = [q.id for q in selected_questions]
 

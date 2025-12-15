@@ -10,12 +10,49 @@
         <div class="list-group">
             <a href="/material" class="list-group-item list-group-item-action">教材を見る</a>
             {% for category in section_categories %}
-                <a href="{{ url_for('section_test', section_category=category) }}" class="list-group-item list-group-item-action">
-                    {{ section_display_names.get(category, category) }} 章末テスト
-                </a>
+            <div class="list-group-item">
+                <form action="{{ url_for('section_test', section_category=category) }}" method="get" class="d-flex justify-content-between align-items-center">
+                    <span>第{{ category }}章 章末テスト</span>
+                    <div>
+                        <select name="num_questions" class="form-select-sm me-2">
+                            <option value="5">5問</option>
+                            <option value="10" selected>10問</option>
+                            <option value="20">20問</option>
+                            <option value="40">40問</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">開始</button>
+                    </div>
+                </form>
+            </div>
             {% endfor %}
-            <a href="/practice" class="list-group-item list-group-item-action">模擬試験</a>
-            <a href="/retest" class="list-group-item list-group-item-action">苦手問題の再テスト</a>
+            <div class="list-group-item">
+                <form action="{{ url_for('practice') }}" method="get" class="d-flex justify-content-between align-items-center">
+                    <span>模擬試験</span>
+                    <div>
+                        <select name="num_questions" class="form-select-sm me-2">
+                            <option value="5">5問</option>
+                            <option value="10" selected>10問</option>
+                            <option value="20">20問</option>
+                            <option value="40">40問</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">開始</button>
+                    </div>
+                </form>
+            </div>
+            <div class="list-group-item">
+                <form action="{{ url_for('retest') }}" method="get" class="d-flex justify-content-between align-items-center">
+                    <span>苦手問題の再テスト</span>
+                    <div>
+                        <select name="num_questions" class="form-select-sm me-2">
+                            <option value="5">5問</option>
+                            <option value="10" selected>10問</option>
+                            <option value="20">20問</option>
+                            <option value="40">40問</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">開始</button>
+                    </div>
+                </form>
+            </div>
             {% if user == "admin@example.com" %}
             <a href="/admin" class="list-group-item list-group-item-action">管理者画面</a>
             {% endif %}
