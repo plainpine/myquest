@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}プロフィール管理{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>プロフィール管理</h2>
+    </div>
+    <div class="card-body">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="post">
+            <div class="mb-3">
+                <label for="nickname" class="form-label">ニックネーム</label>
+                <input type="text" class="form-control" id="nickname" name="nickname" value="{{ current_user.nickname or '' }}">
+            </div>
+            <hr>
+            <h4>パスワードの変更</h4>
+            <div class="mb-3">
+                <label for="current_password" class="form-label">現在のパスワード</label>
+                <input type="password" class="form-control" id="current_password" name="current_password">
+                <div class="form-text">パスワードを変更する場合のみ入力してください。</div>
+            </div>
+            <div class="mb-3">
+                <label for="new_password" class="form-label">新しいパスワード</label>
+                <input type="password" class="form-control" id="new_password" name="new_password">
+            </div>
+            <div class="mb-3">
+                <label for="confirm_new_password" class="form-label">新しいパスワード（確認）</label>
+                <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password">
+            </div>
+            <button type="submit" class="btn btn-primary">更新</button>
+            <a href="{{ url_for('home') }}" class="btn btn-secondary">ホームに戻る</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

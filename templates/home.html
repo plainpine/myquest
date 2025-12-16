@@ -6,7 +6,7 @@
         <h2>ホーム</h2>
     </div>
     <div class="card-body">
-        <p class="card-text">{{ user }} さん、ようこそ。</p>
+        <p class="card-text">{{ current_user.nickname or current_user.email }} さん、ようこそ。</p>
         <div class="list-group">
             <a href="/material" class="list-group-item list-group-item-action">教材を見る</a>
             {% for category in section_categories %}
@@ -53,11 +53,11 @@
                     </div>
                 </form>
             </div>
-            {% if user == "admin@example.com" %}
-            <a href="/admin" class="list-group-item list-group-item-action">管理者画面</a>
+            {% if current_user.email == "admin@example.com" %}
+            <a href="{{ url_for('admin_questions') }}" class="list-group-item list-group-item-action">問題管理</a>
+            <a href="{{ url_for('admin_users') }}" class="list-group-item list-group-item-action">ユーザー管理</a>
             {% endif %}
         </div>
     </div>
 </div>
-<p class="mt-3"><a href="/logout" class="btn btn-secondary">ログアウト</a></p>
 {% endblock %}

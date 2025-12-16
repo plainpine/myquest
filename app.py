@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from database import db
 from model import Question, User, TestResult
 import random   # ランダム出題用
@@ -18,12 +18,31 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+# --- ログインユーザーをコンテキストプロセッサでテンプレートに渡す ---
+@app.context_processor
+def inject_user():
+    if 'user' in session:
+        user = User.query.filter_by(email=session['user']).first()
+        return dict(current_user=user)
+    return dict(current_user=None)
+
+# --- ログイン必須デコレーター ---
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user" not in session:
+            flash('ログインが必要です', 'warning')
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # --- 管理者用デコレーター ---
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get("user") != "admin@example.com":
-            return redirect(url_for("login", error="管理者権限が必要です"))
+            flash('管理者権限が必要です', 'danger')
+            return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -50,13 +69,12 @@ def try_login():
 @app.route("/logout")
 def logout():
     session.clear()
+    flash('ログアウトしました。', 'info')
     return redirect("/")
 
 @app.route("/change_password", methods=["GET", "POST"])
+@login_required
 def change_password():
-    if "user" not in session:
-        return redirect("/")
-
     if request.method == "POST":
         new_password = request.form.get("new_password")
         confirm_password = request.form.get("confirm_password")
@@ -69,18 +87,18 @@ def change_password():
             user.set_password(new_password)
             user.password_changed = True
             db.session.commit()
+            flash('パスワードが変更されました。', 'success')
             return redirect(url_for("home"))
         else:
+            # This case should not happen if login_required works
             return redirect(url_for("login", error="ユーザーが見つかりません"))
 
     return render_template("change_password.html")
 
 # --- ホーム ---
 @app.route("/home")
+@login_required
 def home():
-    if "user" not in session:
-        return redirect("/")
-
     # "category"が数字であるものを章カテゴリとして取得
     all_categories_tuples = db.session.query(Question.category).distinct().all()
     all_categories = [c[0] for c in all_categories_tuples if c[0] is not None]
@@ -94,25 +112,72 @@ def home():
         section_categories=section_categories
     )
 
+# --- プロフィール管理 ---
+@app.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+    user = User.query.filter_by(email=session['user']).first()
+    if not user:
+        # Should not happen with @login_required
+        return redirect(url_for('login'))
+
+    if request.method == "POST":
+        nickname = request.form.get("nickname")
+        current_password = request.form.get("current_password")
+        new_password = request.form.get("new_password")
+        confirm_new_password = request.form.get("confirm_new_password")
+
+        changes_made = False
+
+        # 1. パスワード変更の検証と処理
+        if current_password or new_password or confirm_new_password:
+            if not user.check_password(current_password):
+                flash('現在のパスワードが正しくありません。', 'danger')
+                return redirect(url_for('profile'))
+            if new_password != confirm_new_password:
+                flash('新しいパスワードが一致しません。', 'danger')
+                return redirect(url_for('profile'))
+            if not new_password:
+                flash('新しいパスワードを入力してください。', 'danger')
+                return redirect(url_for('profile'))
+            
+            user.set_password(new_password)
+            changes_made = True
+
+        # 2. ニックネームの更新
+        # Note: nickname can be None, so handle comparison carefully
+        if (user.nickname or "") != (nickname or ""):
+            user.nickname = nickname
+            changes_made = True
+
+        # 3. 変更があればコミットと通知
+        if changes_made:
+            db.session.commit()
+            flash('プロフィールが更新されました。', 'success')
+        else:
+            flash('変更内容がありませんでした。', 'info')
+
+        return redirect(url_for('home'))
+
+    return render_template("profile.html")
+
 
 # --- 教材 ---
 @app.route("/material")
+@login_required
 def material():
-    if "user" not in session:
-        return redirect("/")
     return render_template("material.html")
 
 # --- 章末テスト ---
 @app.route("/section_test/<string:section_category>", methods=["GET", "POST"])
+@login_required
 def section_test(section_category):
-    if "user" not in session:
-        return redirect("/")
-
     display_name = f"第{section_category}章"
 
     if request.method == "POST":
         user = User.query.filter_by(email=session["user"]).first()
         if not user:
+            # Should not happen due to @login_required
             return redirect(url_for("login", error="ユーザーが見つかりません"))
 
         # セッションから問題IDリストを取得
@@ -198,10 +263,8 @@ def section_test(section_category):
 
 # --- 模擬試験 ---
 @app.route("/practice", methods=["GET", "POST"])
+@login_required
 def practice():
-    if "user" not in session:
-        return redirect("/")
-
     display_name = "模擬試験"
 
     if request.method == "POST":
@@ -294,10 +357,8 @@ def practice():
 
 # --- 再テスト ---
 @app.route("/retest", methods=["GET", "POST"])
+@login_required
 def retest():
-    if "user" not in session:
-        return redirect("/")
-
     user = User.query.filter_by(email=session["user"]).first()
     if not user:
         return redirect(url_for("login", error="ユーザーが見つかりません"))
@@ -412,9 +473,8 @@ def retest():
 
 # --- 結果画面 ---
 @app.route("/result")
+@login_required
 def result():
-    if "user" not in session:
-        return redirect("/")
     ok = request.args.get("ok") == "True"
     return render_template("result.html", ok=ok)
 
@@ -495,6 +555,65 @@ def delete_question(question_id):
     db.session.delete(question)
     db.session.commit()
     return redirect(url_for("admin_questions"))
+
+@app.route("/admin/users")
+@admin_required
+def admin_users():
+    users = User.query.filter(User.email != 'admin@example.com').order_by(User.id).all()
+    return render_template("admin_users.html", users=users)
+
+@app.route("/admin/user/add", methods=["GET", "POST"])
+@admin_required
+def add_user():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+        
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return render_template("user_form.html", error="このメールアドレスは既に使用されています。")
+
+        new_user = User(email=email)
+        new_user.set_password(password)
+        new_user.password_changed = False # Force password change on first login
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for("admin_users"))
+    return render_template("user_form.html")
+
+@app.route("/admin/user/delete/<int:user_id>", methods=["POST"])
+@admin_required
+def delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.email == 'admin@example.com':
+        # Prevent admin from being deleted
+        return redirect(url_for("admin_users"))
+    
+    # Also delete related test results
+    TestResult.query.filter_by(user_id=user.id).delete()
+
+    db.session.delete(user)
+    db.session.commit()
+    return redirect(url_for("admin_users"))
+
+@app.route("/admin/user/change_password/<int:user_id>", methods=["GET", "POST"])
+@admin_required
+def admin_change_password(user_id):
+    user = User.query.get_or_404(user_id)
+    if request.method == "POST":
+        new_password = request.form.get("new_password")
+        confirm_password = request.form.get("confirm_password")
+
+        if new_password != confirm_password:
+            return render_template("user_change_password.html", user=user, error="パスワードが一致しません")
+
+        user.set_password(new_password)
+        user.password_changed = False # Force password change on next login
+        db.session.commit()
+        return redirect(url_for("admin_users"))
+        
+    return render_template("user_change_password.html", user=user)
+
 
 # --------------------------------------------------
 if __name__ == "__main__":
