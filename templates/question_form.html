@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ '問題の編集' if question else '新しい問題の追加' }}{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>{{ '問題の編集' if question else '新しい問題の追加' }}</h2>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            <div class="mb-3">
+                <label for="question" class="form-label">問題文</label>
+                <textarea class="form-control" id="question" name="question" rows="3" required>{{ question.question if question }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label for="choice1" class="form-label">選択肢1</label>
+                <input type="text" class="form-control" id="choice1" name="choice1" value="{{ question.choice1 if question }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="choice2" class="form-label">選択肢2</label>
+                <input type="text" class="form-control" id="choice2" name="choice2" value="{{ question.choice2 if question }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="choice3" class="form-label">選択肢3</label>
+                <input type="text" class="form-control" id="choice3" name="choice3" value="{{ question.choice3 if question }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="choice4" class="form-label">選択肢4</label>
+                <input type="text" class="form-control" id="choice4" name="choice4" value="{{ question.choice4 if question }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="correct" class="form-label">正解の選択肢番号</label>
+                <select class="form-select" id="correct" name="correct" required>
+                    <option value="1" {% if question and question.correct == 1 %}selected{% endif %}>1</option>
+                    <option value="2" {% if question and question.correct == 2 %}selected{% endif %}>2</option>
+                    <option value="3" {% if question and question.correct == 3 %}selected{% endif %}>3</option>
+                    <option value="4" {% if question and question.correct == 4 %}selected{% endif %}>4</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="category" class="form-label">カテゴリ (章番号)</label>
+                <input type="text" class="form-control" id="category" name="category" value="{{ question.category if question }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="explanation" class="form-label">解説</label>
+                <textarea class="form-control" id="explanation" name="explanation" rows="5">{{ question.explanation if question }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label for="document_url" class="form-label">参照URL</label>
+                <input type="url" class="form-control" id="document_url" name="document_url" value="{{ question.document_url if question }}">
+            </div>
+            <button type="submit" class="btn btn-primary">保存</button>
+            <a href="{{ url_for('admin_questions') }}" class="btn btn-secondary">キャンセル</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

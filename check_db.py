@@ -49,7 +49,7 @@ def create_initial_user():
         if not admin:
             new_admin = User(email="admin@example.com")
             new_admin.set_password("admin123")
-            new_admin.password_changed = True  # Admin user does not need to change password
+            new_admin.password_changed = False  # Admin user must change password on first login
             db.session.add(new_admin)
             db.session.commit()
             print("Admin user created.")

@@ -4,6 +4,8 @@ from model import Question, User, TestResult
 import random   # ランダム出題用
 from itertools import groupby
 
+from functools import wraps
+
 app = Flask(__name__)
 app.secret_key = "test123"  # 簡易セッション用（学習用）
 
@@ -15,6 +17,15 @@ db.init_app(app)
 # --- 起動時にテーブルだけ作成 ---
 with app.app_context():
     db.create_all()
+
+# --- 管理者用デコレーター ---
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("user") != "admin@example.com":
+            return redirect(url_for("login", error="管理者権限が必要です"))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # --- ログイン関連 ---
 @app.route("/")
@@ -409,10 +420,81 @@ def result():
 
 # --- 管理者画面 ---
 @app.route("/admin")
-def admin():
-    if session.get("user") != "admin@example.com":
-        return redirect("/")
-    return render_template("admin.html")
+@admin_required
+def admin_home():
+    return redirect(url_for("admin_questions"))
+
+@app.route("/admin/questions")
+@admin_required
+def admin_questions():
+    page = request.args.get('page', 1, type=int)
+    category = request.args.get('category')
+    
+    # "category"が数字であるものを章カテゴリとして取得
+    all_categories_tuples = db.session.query(Question.category).distinct().all()
+    all_categories = [c[0] for c in all_categories_tuples if c[0] is not None]
+    
+    # isdigit()で数字のみを抽出し、数値としてソート
+    section_categories = sorted([c for c in all_categories if c.isdigit()], key=int)
+
+    query = Question.query.order_by(Question.id)
+    if category:
+        query = query.filter_by(category=category)
+    
+    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    questions = pagination.items
+        
+    return render_template("admin.html", 
+                           questions=questions, 
+                           section_categories=section_categories,
+                           selected_category=category,
+                           pagination=pagination)
+
+@app.route("/admin/question/add", methods=["GET", "POST"])
+@admin_required
+def add_question():
+    if request.method == "POST":
+        new_question = Question(
+            question=request.form["question"],
+            choice1=request.form["choice1"],
+            choice2=request.form["choice2"],
+            choice3=request.form["choice3"],
+            choice4=request.form["choice4"],
+            correct=int(request.form["correct"]),
+            category=request.form["category"],
+            explanation=request.form["explanation"],
+            document_url=request.form["document_url"]
+        )
+        db.session.add(new_question)
+        db.session.commit()
+        return redirect(url_for("admin_questions"))
+    return render_template("question_form.html", question=None)
+
+@app.route("/admin/question/edit/<int:question_id>", methods=["GET", "POST"])
+@admin_required
+def edit_question(question_id):
+    question = Question.query.get_or_404(question_id)
+    if request.method == "POST":
+        question.question = request.form["question"]
+        question.choice1 = request.form["choice1"]
+        question.choice2 = request.form["choice2"]
+        question.choice3 = request.form["choice3"]
+        question.choice4 = request.form["choice4"]
+        question.correct = int(request.form["correct"])
+        question.category = request.form["category"]
+        question.explanation = request.form["explanation"]
+        question.document_url = request.form["document_url"]
+        db.session.commit()
+        return redirect(url_for("admin_questions"))
+    return render_template("question_form.html", question=question)
+
+@app.route("/admin/question/delete/<int:question_id>", methods=["POST"])
+@admin_required
+def delete_question(question_id):
+    question = Question.query.get_or_404(question_id)
+    db.session.delete(question)
+    db.session.commit()
+    return redirect(url_for("admin_questions"))
 
 # --------------------------------------------------
 if __name__ == "__main__":
