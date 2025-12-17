@@ -162,12 +162,6 @@ def profile():
     return render_template("profile.html")
 
 
-# --- 教材 ---
-@app.route("/material")
-@login_required
-def material():
-    return render_template("material.html")
-
 # --- 章末テスト ---
 @app.route("/section_test/<string:section_category>", methods=["GET", "POST"])
 @login_required
