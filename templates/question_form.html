@@ -7,6 +7,7 @@
     </div>
     <div class="card-body">
         <form method="post">
+            <input type="hidden" name="original_category" value="{{ category or '' }}">
             <div class="mb-3">
                 <label for="question" class="form-label">問題文</label>
                 <textarea class="form-control" id="question" name="question" rows="3" required>{{ question.question if question }}</textarea>
@@ -38,7 +39,7 @@
             </div>
             <div class="mb-3">
                 <label for="category" class="form-label">カテゴリ (章番号)</label>
-                <input type="text" class="form-control" id="category" name="category" value="{{ question.category if question }}" required>
+                <input type="text" class="form-control" id="category" name="category" value="{{ question.category if question else category }}" required>
             </div>
             <div class="mb-3">
                 <label for="explanation" class="form-label">解説</label>
@@ -49,7 +50,7 @@
                 <input type="url" class="form-control" id="document_url" name="document_url" value="{{ question.document_url if question }}">
             </div>
             <button type="submit" class="btn btn-primary">保存</button>
-            <a href="{{ url_for('admin_questions') }}" class="btn btn-secondary">キャンセル</a>
+            <a href="{{ url_for('admin_questions', category=category or '') }}" class="btn btn-secondary">キャンセル</a>
         </form>
     </div>
 </div>

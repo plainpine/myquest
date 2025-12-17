@@ -504,9 +504,10 @@ def admin_questions():
                            selected_category=category,
                            pagination=pagination)
 
-@app.route("/admin/question/add", methods=["GET", "POST"])
+@app.route("/admin/question/add", defaults={'category': ''}, methods=["GET", "POST"])
+@app.route("/admin/question/add/<string:category>", methods=["GET", "POST"])
 @admin_required
-def add_question():
+def add_question(category):
     if request.method == "POST":
         new_question = Question(
             question=request.form["question"],
@@ -521,12 +522,14 @@ def add_question():
         )
         db.session.add(new_question)
         db.session.commit()
-        return redirect(url_for("admin_questions"))
-    return render_template("question_form.html", question=None)
+        original_category = request.form.get("original_category")
+        return redirect(url_for("admin_questions", category=original_category))
+    return render_template("question_form.html", question=None, category=category)
 
-@app.route("/admin/question/edit/<int:question_id>", methods=["GET", "POST"])
+@app.route("/admin/question/edit/<int:question_id>", defaults={'category': ''}, methods=["GET", "POST"])
+@app.route("/admin/question/edit/<int:question_id>/<string:category>", methods=["GET", "POST"])
 @admin_required
-def edit_question(question_id):
+def edit_question(question_id, category):
     question = Question.query.get_or_404(question_id)
     if request.method == "POST":
         question.question = request.form["question"]
@@ -539,16 +542,20 @@ def edit_question(question_id):
         question.explanation = request.form["explanation"]
         question.document_url = request.form["document_url"]
         db.session.commit()
-        return redirect(url_for("admin_questions"))
-    return render_template("question_form.html", question=question)
+        # 元の絞り込み条件でリダイレクト
+        original_category = request.form.get("original_category")
+        return redirect(url_for("admin_questions", category=original_category))
+    # question_form.htmlにカテゴリを渡す
+    return render_template("question_form.html", question=question, category=category)
 
 @app.route("/admin/question/delete/<int:question_id>", methods=["POST"])
 @admin_required
 def delete_question(question_id):
     question = Question.query.get_or_404(question_id)
+    category = request.form.get("category")
     db.session.delete(question)
     db.session.commit()
-    return redirect(url_for("admin_questions"))
+    return redirect(url_for("admin_questions", category=category))
 
 @app.route("/admin/users")
 @admin_required

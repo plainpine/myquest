@@ -18,7 +18,7 @@ class Question(db.Model):
     document_url = db.Column(db.String(500), nullable=True) # New field for document URL
 
     # TestResult との関連付け
-    results = db.relationship("TestResult", back_populates="question")
+    results = db.relationship("TestResult", back_populates="question", cascade="all, delete-orphan")
 
 
 class User(db.Model):

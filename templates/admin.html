@@ -4,7 +4,7 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h2>問題管理</h2>
-        <a href="{{ url_for('add_question') }}" class="btn btn-primary">新しい問題を追加</a>
+        <a href="{{ url_for('add_question', category=selected_category or '') }}" class="btn btn-primary">新しい問題を追加</a>
     </div>
     <div class="card-body">
         <form action="{{ url_for('admin_questions') }}" method="get" class="mb-3">
@@ -39,8 +39,9 @@
                     <th scope="row">{{ q.id }}</th>
                     <td>{{ q.question }}</td>
                     <td>
-                        <a href="{{ url_for('edit_question', question_id=q.id) }}" class="btn btn-sm btn-secondary">編集</a>
+                        <a href="{{ url_for('edit_question', question_id=q.id, category=selected_category or '') }}" class="btn btn-sm btn-secondary">編集</a>
                         <form action="{{ url_for('delete_question', question_id=q.id) }}" method="post" class="d-inline" onsubmit="return confirm('本当にこの問題を削除しますか？');">
+                            <input type="hidden" name="category" value="{{ selected_category or '' }}">
                             <button type="submit" class="btn btn-sm btn-danger">削除</button>
                         </form>
                     </td>
