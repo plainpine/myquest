@@ -8,7 +8,7 @@
     <div class="card-body">
         <form method="post">
             {% for q in questions %}
-            <div class="mb-4">
+            <div class="mb-4 question-item" style="display: none;">
                 <p class="card-text fw-bold">問題 {{ loop.index }}: {{ q.question }}</p>
                 <div class="list-group">
                     <label class="list-group-item list-group-item-action">
@@ -30,10 +30,114 @@
                 </div>
             </div>
             {% endfor %}
+
+            <div id="pagination-controls" class="mt-4 d-flex justify-content-center"></div>
+
             <button type="submit" class="btn btn-primary mt-3">回答する</button>
         </form>
     </div>
 </div>
 
 <p class="mt-3"><a href="/home" class="btn btn-secondary">戻る</a></p>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const itemsPerPage = 20;
+    const questionItems = Array.from(document.querySelectorAll('.question-item'));
+    const totalItems = questionItems.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const paginationControls = document.getElementById('pagination-controls');
+    let currentPage = 1;
+
+    function showPage(page) {
+        currentPage = page;
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+
+        questionItems.forEach((item, index) => {
+            if (index >= startIndex && index < endIndex) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        renderControls();
+    }
+
+    function renderControls() {
+        paginationControls.innerHTML = '';
+        const nav = document.createElement('nav');
+        nav.setAttribute('aria-label', 'Page navigation');
+        const ul = document.createElement('ul');
+        ul.classList.add('pagination');
+
+        // Previous button
+        const prevLi = document.createElement('li');
+        prevLi.classList.add('page-item');
+        if (currentPage === 1) {
+            prevLi.classList.add('disabled');
+        }
+        const prevA = document.createElement('a');
+        prevA.classList.add('page-link');
+        prevA.href = '#';
+        prevA.innerText = '前へ';
+        prevA.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+                showPage(currentPage - 1);
+            }
+        });
+        prevLi.appendChild(prevA);
+        ul.appendChild(prevLi);
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.classList.add('page-item');
+            if (i === currentPage) {
+                li.classList.add('active');
+            }
+            const a = document.createElement('a');
+            a.classList.add('page-link');
+            a.href = '#';
+            a.innerText = i;
+            a.addEventListener('click', function (e) {
+                e.preventDefault();
+                showPage(i);
+            });
+            li.appendChild(a);
+            ul.appendChild(li);
+        }
+
+        // Next button
+        const nextLi = document.createElement('li');
+        nextLi.classList.add('page-item');
+        if (currentPage === totalPages) {
+            nextLi.classList.add('disabled');
+        }
+        const nextA = document.createElement('a');
+        nextA.classList.add('page-link');
+        nextA.href = '#';
+        nextA.innerText = '次へ';
+        nextA.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                showPage(currentPage + 1);
+            }
+        });
+        nextLi.appendChild(nextA);
+        ul.appendChild(nextLi);
+
+        nav.appendChild(ul);
+        paginationControls.appendChild(nav);
+    }
+
+    if (totalItems > 0) {
+        showPage(1);
+    }
+});
+</script>
 {% endblock %}
