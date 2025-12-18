@@ -12,22 +12,12 @@
                 <div class="mb-4 question-item" style="display: none;">
                     <p class="card-text fw-bold">問題 {{ loop.index }}: {{ q.question }}</p>
                     <div class="list-group">
+                        {% for choice in q.shuffled_choices %}
                         <label class="list-group-item list-group-item-action">
-                            <input class="form-check-input me-1" type="radio" name="choice_{{ q.id }}" value="1">
-                            1. {{ q.choice1 }}
+                            <input class="form-check-input me-1" type="radio" name="choice_{{ q.id }}" value="{{ choice.id }}">
+                            {{ loop.index }}. {{ choice.text }}
                         </label>
-                        <label class="list-group-item list-group-item-action">
-                            <input class="form-check-input me-1" type="radio" name="choice_{{ q.id }}" value="2">
-                            2. {{ q.choice2 }}
-                        </label>
-                        <label class="list-group-item list-group-item-action">
-                            <input class="form-check-input me-1" type="radio" name="choice_{{ q.id }}" value="3">
-                            3. {{ q.choice3 }}
-                        </label>
-                        <label class="list-group-item list-group-item-action">
-                            <input class="form-check-input me-1" type="radio" name="choice_{{ q.id }}" value="4">
-                            4. {{ q.choice4 }}
-                        </label>
+                        {% endfor %}
                     </div>
                 </div>
                 {% endfor %}

@@ -245,6 +245,17 @@ def section_test(section_category):
     num_to_select = min(len(all_section_questions), num_questions)
     selected_questions = random.sample(all_section_questions, num_to_select)
 
+    # 選択肢をシャッフル
+    for q in selected_questions:
+        choices = [
+            {'id': 1, 'text': q.choice1},
+            {'id': 2, 'text': q.choice2},
+            {'id': 3, 'text': q.choice3},
+            {'id': 4, 'text': q.choice4}
+        ]
+        random.shuffle(choices)
+        q.shuffled_choices = choices
+
     # 選んだ問題のIDをセッションに保存
     session[f"section_test_{section_category}_questions"] = [q.id for q in selected_questions]
 
@@ -339,6 +350,17 @@ def practice():
     num_to_select = min(len(all_questions), num_questions)
     selected_questions = random.sample(all_questions, num_to_select)
     
+    # 選択肢をシャッフル
+    for q in selected_questions:
+        choices = [
+            {'id': 1, 'text': q.choice1},
+            {'id': 2, 'text': q.choice2},
+            {'id': 3, 'text': q.choice3},
+            {'id': 4, 'text': q.choice4}
+        ]
+        random.shuffle(choices)
+        q.shuffled_choices = choices
+
     # 選んだ問題のIDをセッションに保存
     session["practice_questions"] = [q.id for q in selected_questions]
 
@@ -455,6 +477,17 @@ def retest():
     num_to_select = min(len(retest_questions), num_questions)
     selected_questions = random.sample(retest_questions, num_to_select)
     
+    # 選択肢をシャッフル
+    for q in selected_questions:
+        choices = [
+            {'id': 1, 'text': q.choice1},
+            {'id': 2, 'text': q.choice2},
+            {'id': 3, 'text': q.choice3},
+            {'id': 4, 'text': q.choice4}
+        ]
+        random.shuffle(choices)
+        q.shuffled_choices = choices
+
     session["retest_questions"] = [q.id for q in selected_questions]
 
     return render_template(
