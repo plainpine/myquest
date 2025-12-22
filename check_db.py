@@ -6,7 +6,7 @@ from model import Question, User
 def read_all_questions():
     with app.app_context():
 
-        # テーブルが無い場合はエラー防止（存在しなければ作成）
+        # テーブルが無い場合はエラー防止（存在しなければ作成 ）
         db.create_all()
 
         questions = Question.query.all()
