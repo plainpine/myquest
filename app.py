@@ -46,6 +46,61 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# --- 成績表示 ---
+@app.route("/performance")
+@login_required
+def performance():
+    user = User.query.filter_by(email=session['user']).first()
+    if not user:
+        flash('ユーザーが見つかりません', 'danger')
+        return redirect(url_for('login'))
+
+    # ユーザーの全テスト結果を日付順に取得
+    all_results = TestResult.query.filter_by(user_id=user.id).order_by(TestResult.timestamp).all()
+
+    # グラフ用のデータを準備
+    dates = []
+    cumulative_questions = []
+    accuracy_rates = []
+    
+    total_answered = 0
+    total_correct = 0
+
+    # 日付ごとの結果を累積して計算
+    # 同じ日付のものはまとめる
+    daily_results = {}
+    for result in all_results:
+        date_str = result.timestamp.strftime('%Y-%m-%d')
+        if date_str not in daily_results:
+            daily_results[date_str] = {'answered': 0, 'correct': 0}
+        daily_results[date_str]['answered'] += 1
+        if result.user_answer_is_correct:
+            daily_results[date_str]['correct'] += 1
+
+    # 日付でソート
+    sorted_daily_results = sorted(daily_results.items())
+
+    for date_str, data in sorted_daily_results:
+        total_answered += data['answered']
+        total_correct += data['correct']
+
+        dates.append(date_str)
+        cumulative_questions.append(total_answered)
+        
+        # 累積正解率を計算（分母が0にならないようにチェック）
+        if total_answered > 0:
+            accuracy_rates.append(round((total_correct / total_answered) * 100, 2))
+        else:
+            accuracy_rates.append(0) # もし回答がなければ0%
+
+    return render_template(
+        "performance.html",
+        dates=dates,
+        cumulative_questions=cumulative_questions,
+        accuracy_rates=accuracy_rates
+    )
+
+
 # --- ログイン関連 ---
 @app.route("/")
 def login():

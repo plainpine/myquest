@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}成績表示{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">成績表示</h1>
+
+<div class="card mb-4">
+    <div class="card-header">
+        学習の進捗
+    </div>
+    <div class="card-body">
+        <canvas id="performanceChart"></canvas>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dates = {{ dates | tojson }};
+        const cumulativeQuestions = {{ cumulative_questions | tojson }};
+        const accuracyRates = {{ accuracy_rates | tojson }};
+
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: '累計解答数',
+                        data: cumulativeQuestions,
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        yAxisID: 'yCumulative',
+                        tension: 0.1,
+                        fill: true
+                    },
+                    {
+                        label: '正解率 (%)',
+                        data: accuracyRates,
+                        borderColor: 'rgb(255, 99, 132)',
+                        borderDash: [5, 5], // Dotted line for accuracy
+                        yAxisID: 'yAccuracy',
+                        tension: 0.1,
+                        fill: false
+                    },
+                    {
+                        label: '合格基準 (70%)',
+                        data: Array(dates.length).fill(70),
+                        borderColor: 'rgb(255, 0, 0)',
+                        pointRadius: 0,
+                        yAxisID: 'yAccuracy',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '学習進捗 (累計解答数と正解率)'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '日付'
+                        }
+                    },
+                    yCumulative: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: '累計解答数'
+                        },
+                        beginAtZero: true
+                    },
+                    yAccuracy: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: '正解率 (%)'
+                        },
+                        min: 0,
+                        max: 100,
+                        grid: {
+                            drawOnChartArea: false, // only draw grid for yCumulative axis
+                        },
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
